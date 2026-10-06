@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="sr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<meta name="description" content="Lični planer troškova, prihoda, štednje i dugova.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<title>Moj budžet</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#151c2e;--panel2:#1d2740;--text:#f4f6fb;--muted:#a8b2c7;--line:#2d3852;--green:#4ade80;--red:#fb7185;--blue:#7dd3fc;--yellow:#facc15}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#10182a,#0b1020 40%);color:var(--text);font:16px system-ui,-apple-system,sans-serif;min-height:100vh}
+header{padding:24px 18px 14px;max-width:900px;margin:auto}h1{font-size:1.8rem;margin:0 0 4px}header p{margin:0;color:var(--muted)}
+main{max-width:900px;margin:auto;padding:0 14px 36px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 8px 25px #0002}.metric small{color:var(--muted);display:block;margin-bottom:8px}.metric strong{font-size:1.35rem;overflow-wrap:anywhere}.positive{color:var(--green)}.negative{color:var(--red)}.section-title{font-size:1.1rem;margin:2px 0 14px}
+nav{display:flex;gap:8px;overflow:auto;padding:4px 0 14px;position:sticky;top:0;background:#0c1221;z-index:2}
+nav button{white-space:nowrap;flex:1}button,.button{border:0;border-radius:12px;padding:12px 14px;background:var(--panel2);color:var(--text);font:inherit;font-weight:650;cursor:pointer}button.primary{background:#2563eb;color:white}button.active{background:#2563eb}button.danger{background:#542334;color:#fecdd3}
+input,select{width:100%;border:1px solid var(--line);border-radius:11px;padding:12px;background:#0e1526;color:var(--text);font:inherit}label{display:block;color:var(--muted);font-size:.9rem;margin-bottom:6px}.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.field{margin-bottom:12px}.wide{grid-column:1/-1}.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{flex:1}
+.item{display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:1px solid var(--line);padding:12px 0}.item:last-child{border-bottom:0}.item strong{display:block}.item small{color:var(--muted)}.amount{font-weight:750;white-space:nowrap}.empty{color:var(--muted);padding:14px 0}.progress{height:8px;background:#2b3550;border-radius:20px;overflow:hidden;margin:10px 0}.progress span{display:block;height:100%;background:var(--green);width:0}.hidden{display:none!important}.hint{font-size:.88rem;color:var(--muted);line-height:1.5}.pill{display:inline-block;border-radius:20px;padding:3px 8px;background:#29334c;color:#cbd5e1;font-size:.78rem}
+footer{color:var(--muted);font-size:.8rem;text-align:center;padding:20px}
+@media(min-width:650px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.formgrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<header><h1>💰 Moj budžet</h1><p>Prihodi, troškovi, štednja i rate — na jednom mestu.</p></header>
+<main>
+<nav aria-label="Glavna navigacija">
+<button class="active" data-tab="pregled">Pregled</button><button data-tab="transakcije">Transakcije</button><button data-tab="stednja">Štednja</button><button data-tab="dugovi">Dugovi i rate</button><button data-tab="podesavanja">Podešavanja</button>
+</nav>
+<section id="pregled" class="tab">
+<div class="grid">
+<div class="card metric"><small>Primanja ovog meseca</small><strong class="positive" id="incomeTotal">0 RSD</strong></div>
+<div class="card metric"><small>Troškovi ovog meseca</small><strong class="negative" id="expenseTotal">0 RSD</strong><small id="expensePercent">0% primanja</small></div>
+<div class="card metric"><small>Saldo nakon troškova</small><strong id="balanceTotal">0 RSD</strong><small id="balancePercent">0% primanja ostalo</small></div>
+<div class="card metric"><small>Ušteđeno (ciljevi)</small><strong id="savedTotal">0 RSD</strong></div>
+</div>
+<div class="card"><h2 class="section-title">Raspodela primanja</h2><p class="hint">Procenat prikazuje koliko ukupnih primanja odlazi na evidentirane troškove i koliko ostaje kao saldo.</p><div class="progress" style="height:14px"><span id="expenseBar" style="width:0;background:#fb7185"></span></div><div class="item"><div><strong>Otišlo na troškove</strong></div><div class="amount negative" id="expenseBreakdown">0 RSD · 0%</div></div><div class="item"><div><strong>Preostali saldo</strong></div><div class="amount positive" id="balanceBreakdown">0 RSD · 0%</div></div></div>
+<div class="card"><h2 class="section-title">Dodaj transakciju</h2>
+<form id="txForm" class="formgrid">
+<div class="field"><label for="txType">Vrsta</label><select id="txType"><option value="expense">Trošak</option><option value="income">Prihod</option></select></div>
+<div class="field"><label for="txAmount">Iznos (RSD)</label><input id="txAmount" type="number" min="1" step="1" placeholder="npr. 2500" required></div>
+<div class="field"><label for="txCategory">Kategorija</label><select id="txCategory"><option>Hrana</option><option>Računi</option><option>Prevoz</option><option>Stanovanje</option><option>Zdravlje</option><option>Teretana</option><option>Odeća</option><option>Izlasci</option><option>Plata</option><option>Dodatni prihod</option><option>Ostalo</option></select></div>
+<div class="field"><label for="txDate">Datum</label><input id="txDate" type="date" required></div>
+<div class="field wide"><label for="txNote">Napomena (opciono)</label><input id="txNote" maxlength="120" placeholder="Opis transakcije"></div>
+<div class="wide"><button class="primary" type="submit">+ Sačuvaj transakciju</button></div>
+</form></div>
+<div class="card"><h2 class="section-title">Poslednje transakcije</h2><div id="recentList"></div></div>
+</section>
+<section id="transakcije" class="tab hidden">
+<div class="card"><h2 class="section-title">Sve transakcije</h2><div class="formgrid"><div class="field"><label for="filterMonth">Mesec</label><input id="filterMonth" type="month"></div><div class="field"><label for="filterType">Vrsta</label><select id="filterType"><option value="all">Sve</option><option value="income">Prihodi</option><option value="expense">Troškovi</option></select></div></div><div id="allList"></div></div>
+</section>
+<section id="stednja" class="tab hidden">
+<div class="card"><h2 class="section-title">Novi cilj štednje</h2><form id="goalForm" class="formgrid"><div class="field"><label for="goalName">Naziv cilja</label><input id="goalName" required maxlength="60" placeholder="npr. Putovanje"></div><div class="field"><label for="goalTarget">Ciljani iznos (RSD)</label><input id="goalTarget" type="number" min="1" required></div><div class="field"><label for="goalSaved">Već ušteđeno (RSD)</label><input id="goalSaved" type="number" min="0" value="0" required></div><div class="wide"><button class="primary" type="submit">Dodaj cilj</button></div></form></div>
+<div class="card"><h2 class="section-title">Moji ciljevi</h2><div id="goalList"></div></div>
+</section>
+<section id="dugovi" class="tab hidden">
+<div class="card"><h2 class="section-title">Dodaj dug ili ratu</h2><form id="debtForm" class="formgrid"><div class="field"><label for="debtName">Naziv</label><input id="debtName" required maxlength="60" placeholder="npr. Kredit, telefon"></div><div class="field"><label for="debtTotal">Ukupan dug (RSD)</label><input id="debtTotal" type="number" min="1" required></div><div class="field"><label for="debtMonthly">Mesečna rata (RSD)</label><input id="debtMonthly" type="number" min="1" required></div><div class="field"><label for="debtRemaining">Preostalo za otplatu (RSD)</label><input id="debtRemaining" type="number" min="0" required></div><div class="wide"><button class="primary" type="submit">Dodaj dug/ratu</button></div></form></div>
+<div class="card"><h2 class="section-title">Aktivni dugovi</h2><div id="debtList"></div></div>
+</section>
+<section id="podesavanja" class="tab hidden">
+<div class="card"><h2 class="section-title">Podaci i rezervna kopija</h2><p class="hint">Podaci se čuvaju lokalno na ovom uređaju i u ovom pregledaču. Ne šalju se na server. Napravi rezervnu kopiju ako menjaš telefon ili pregledač.</p><div class="actions"><button id="exportBtn" class="primary">Izvezi CSV transakcije</button><button id="backupBtn">Preuzmi rezervnu kopiju</button><label class="button" for="restoreInput" style="text-align:center;cursor:pointer">Uvezi rezervnu kopiju</label><input id="restoreInput" class="hidden" type="file" accept="application/json"></div><p class="hint">Ako obrišeš podatke pregledača, podaci mogu biti izgubljeni. CSV sadrži transakcije; rezervna kopija sadrži i ciljeve štednje i dugove.</p><button id="clearBtn" class="danger">Obriši sve podatke</button></div>
+<div class="card"><h2 class="section-title">Instalacija</h2><p class="hint">Kada je aplikacija postavljena na HTTPS adresu, otvori je u Chrome-u na Android telefonu, dodirni meni ⋮ i izaberi „Instaliraj aplikaciju“ ili „Dodaj na početni ekran“.</p><p class="hint">Ova verzija je pripremljena kao PWA paket. Za instalaciju je potrebno da bude postavljena na HTTPS hosting.</p></div>
+</section>
+</main>
+<footer>Moj budžet · RSD · Podaci ostaju na uređaju</footer>
+<script>
+const $=id=>document.getElementById(id);
+const today=new Date(); const localDate=new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10);
+$('txDate').value=localDate; $('filterMonth').value=localDate.slice(0,7);
+const KEY='moj-budzet-pwa-v1';
+let state={transactions:[],goals:[],debts:[]};
+try{const old=localStorage.getItem(KEY);if(old)state={...state,...JSON.parse(old)}}catch(e){}
+const money=n=>new Intl.NumberFormat('sr-RS',{style:'currency',currency:'RSD',maximumFractionDigits:0}).format(Number(n)||0);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function save(){localStorage.setItem(KEY,JSON.stringify(state));render()}
+function monthNow(){return localDate.slice(0,7)}
+function txHtml(t, removable=true){const monthIncome=state.transactions.filter(x=>x.type==='income'&&x.date?.slice(0,7)===t.date?.slice(0,7)).reduce((a,x)=>a+Number(x.amount),0);const pct=t.type==='expense'&&monthIncome>0?' · '+(Number(t.amount)/monthIncome*100).toLocaleString('sr-RS',{maximumFractionDigits:1})+'% primanja':'';return `<div class="item"><div><strong>${esc(t.category)} ${t.note?`<span class="pill">${esc(t.note)}</span>`:''}</strong><small>${esc(t.date)} · ${t.type==='income'?'Primanje':'Trošak'}${pct}</small></div><div style="text-align:right"><div class="amount ${t.type==='income'?'positive':'negative'}">${t.type==='income'?'+':'−'}${money(t.amount)}</div>${removable?`<button class="danger" style="padding:5px 8px;margin-top:5px" data-delete-tx="${t.id}">Obriši</button>`:''}</div></div>`}
+function render(){
+ const tx=state.transactions;const thisMonth=tx.filter(t=>t.date?.slice(0,7)===monthNow());
+ const inc=thisMonth.filter(t=>t.type==='income').reduce((a,t)=>a+Number(t.amount),0);
+ const exp=thisMonth.filter(t=>t.type==='expense').reduce((a,t)=>a+Number(t.amount),0);
+ const balance=inc-exp;
+ const expensePct=inc>0?(exp/inc)*100:0;
+ const balancePct=inc>0?(balance/inc)*100:0;
+ $('incomeTotal').textContent=money(inc);$('expenseTotal').textContent=money(exp);$('balanceTotal').textContent=money(balance);
+ $('expensePercent').textContent=inc>0?expensePct.toLocaleString('sr-RS',{maximumFractionDigits:1})+'% primanja':'Nema evidentiranih primanja';
+ $('balancePercent').textContent=inc>0?balancePct.toLocaleString('sr-RS',{maximumFractionDigits:1})+'% primanja ostalo':'Unesi primanje da vidiš procenat';
+ $('expenseBar').style.width=Math.min(100,Math.max(0,expensePct))+'%';
+ $('expenseBreakdown').textContent=money(exp)+' · '+(inc>0?expensePct.toLocaleString('sr-RS',{maximumFractionDigits:1})+'%':'—');
+ $('balanceBreakdown').textContent=money(balance)+' · '+(inc>0?balancePct.toLocaleString('sr-RS',{maximumFractionDigits:1})+'%':'—');
+ $('balanceTotal').className=balance>=0?'positive':'negative';
+ $('savedTotal').textContent=money(state.goals.reduce((a,g)=>a+Number(g.saved),0));
+ const sorted=[...tx].sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
+ $('recentList').innerHTML=sorted.slice(0,5).map(t=>txHtml(t)).join('')||'<div class="empty">Još nema transakcija. Dodaj prvu iznad.</div>';
+ const m=$('filterMonth').value;const type=$('filterType').value;
+ const filtered=sorted.filter(t=>(!m||t.date.startsWith(m))&&(type==='all'||t.type===type));
+ $('allList').innerHTML=filtered.map(t=>txHtml(t)).join('')||'<div class="empty">Nema transakcija za izabrani filter.</div>';
+ $('goalList').innerHTML=state.goals.map(g=>{let pct=Math.min(100,Math.round(100*g.saved/g.target));return `<div class="item"><div style="flex:1"><strong>${esc(g.name)}</strong><small>${money(g.saved)} od ${money(g.target)} · ${pct}%</small><div class="progress"><span style="width:${pct}%"></span></div><div class="actions"><button data-add-goal="${g.id}">Dodaj 1.000 RSD</button><button class="danger" data-delete-goal="${g.id}">Obriši</button></div></div></div>`}).join('')||'<div class="empty">Dodaj cilj štednje da pratiš napredak.</div>';
+ $('debtList').innerHTML=state.debts.map(d=>{let pct=Math.max(0,Math.min(100,Math.round(100*(d.total-d.remaining)/d.total)));return `<div class="item"><div style="flex:1"><strong>${esc(d.name)}</strong><small>Preostalo: ${money(d.remaining)} · Rata: ${money(d.monthly)}</small><div class="progress"><span style="width:${pct}%"></span></div><div class="actions"><button data-pay-debt="${d.id}">Evidentiraj jednu ratu</button><button class="danger" data-delete-debt="${d.id}">Obriši</button></div></div></div>`}).join('')||'<div class="empty">Nema unetih dugova ili rata.</div>';
+}
+document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('hidden',x.id!==b.dataset.tab))}));
+$('txForm').addEventListener('submit',e=>{e.preventDefault();const amount=Number($('txAmount').value);if(!Number.isFinite(amount)||amount<=0)return;state.transactions.push({id:Date.now(),type:$('txType').value,amount,category:$('txCategory').value,date:$('txDate').value,note:$('txNote').value.trim()});$('txAmount').value='';$('txNote').value='';save()});
+$('filterMonth').addEventListener('change',render);$('filterType').addEventListener('change',render);
+$('goalForm').addEventListener('submit',e=>{e.preventDefault();state.goals.push({id:Date.now(),name:$('goalName').value.trim(),target:Number($('goalTarget').value),saved:Number($('goalSaved').value)});e.target.reset();$('goalSaved').value=0;save()});
+$('debtForm').addEventListener('submit',e=>{e.preventDefault();const total=Number($('debtTotal').value),remaining=Number($('debtRemaining').value);if(total<=0||remaining<0||remaining>total){alert('Preostali dug mora biti između 0 i ukupnog duga.');return}state.debts.push({id:Date.now(),name:$('debtName').value.trim(),total,monthly:Number($('debtMonthly').value),remaining});e.target.reset();save()});
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.deleteTx){state.transactions=state.transactions.filter(x=>x.id!==Number(b.dataset.deleteTx));save()}
+ if(b.dataset.deleteGoal){state.goals=state.goals.filter(x=>x.id!==Number(b.dataset.deleteGoal));save()}
+ if(b.dataset.addGoal){const g=state.goals.find(x=>x.id===Number(b.dataset.addGoal));if(g)g.saved=Math.min(g.target,Number(g.saved)+1000);save()}
+ if(b.dataset.deleteDebt){state.debts=state.debts.filter(x=>x.id!==Number(b.dataset.deleteDebt));save()}
+ if(b.dataset.payDebt){const d=state.debts.find(x=>x.id===Number(b.dataset.payDebt));if(d){d.remaining=Math.max(0,d.remaining-d.monthly);if(d.remaining===0)state.debts=state.debts.filter(x=>x.id!==d.id);save()}}
+});
+function download(name,content,type){const a=document.createElement('a');const u=URL.createObjectURL(new Blob([content],{type}));a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
+$('exportBtn').addEventListener('click',()=>{const rows=[['Datum','Vrsta','Kategorija','Iznos RSD','Napomena'],...state.transactions.map(t=>[t.date,t.type==='income'?'Prihod':'Trošak',t.category,t.amount,t.note||''])];const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');download('moj-budzet-transakcije.csv',csv,'text/csv;charset=utf-8')});
+$('backupBtn').addEventListener('click',()=>download('moj-budzet-rezervna-kopija.json',JSON.stringify(state,null,2),'application/json'));
+$('restoreInput').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!Array.isArray(d.transactions)||!Array.isArray(d.goals)||!Array.isArray(d.debts))throw Error();if(confirm('Uvoz će zameniti trenutne podatke. Nastaviti?')){state=d;save();alert('Rezervna kopija je uvezena.')}}catch(err){alert('Datoteka nije ispravna rezervna kopija.')}e.target.value=''});
+$('clearBtn').addEventListener('click',()=>{if(confirm('Da li sigurno želiš da obrišeš sve prihode, troškove, ciljeve i dugove? Ova radnja se ne može poništiti.')){state={transactions:[],goals:[],debts:[]};save()}});
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
+render();
+</script>
+</body></html>
